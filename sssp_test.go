@@ -4,7 +4,7 @@
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
 /*
-Package sssp
+Package sssp implements the SSSP protocol
 SSSP - Golang SSSP protocol implementation
 */
 package sssp
