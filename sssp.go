@@ -68,13 +68,24 @@ func (c *Client) SetConnSleep(s time.Duration) {
 	c.connSleep = s
 }
 
-// Scan a file or directory
-func (c *Client) Scan(p string) (r *Response, err error) {
+// ScanFile submits a single file for scanning
+func (c *Client) ScanFile(p string) (r *Response, err error) {
 	r, err = c.fileCmd(p)
 	return
 }
 
-// ScanReader scans an io.reader
+// ScanDir submits a directory for scanning
+func (c *Client) ScanDir(p string) (r *Response, err error) {
+	r, err = c.fileCmd(p)
+	return
+}
+
+// ScanStream submits a single file via a stream for scanning
+func (c *Client) ScanStream(p string) (r *Response, err error) {
+	return
+}
+
+// ScanReader submits an io reader via a stream for scanning
 func (c *Client) ScanReader(i io.Reader) (r *Response, err error) {
 	return
 }
