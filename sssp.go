@@ -11,8 +11,10 @@ package sssp
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"net/textproto"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -21,7 +23,15 @@ import (
 const (
 	defaultTimeout  = 15 * time.Second
 	defaultSleep    = 1 * time.Second
+	defaultSock     = "/var/lib/savdid/sssp.sock"
 	protocolVersion = "SSSP/1.0"
+	okResp          = "OK"
+	ackResp         = "ACC"
+)
+
+var (
+	// ZeroTime holds the zero value of time
+	ZeroTime time.Time
 )
 
 // Response represents the response from the server
@@ -36,6 +46,7 @@ type Response struct {
 
 // A Client represents an SSSP client.
 type Client struct {
+	network     string
 	address     string
 	connTimeout time.Duration
 	connRetries int
@@ -43,25 +54,12 @@ type Client struct {
 	cmdTimeout  time.Duration
 	tc          *textproto.Conn
 	m           sync.Mutex
-}
-
-// SetConnTimeout sets the connection timeout
-func (c *Client) SetConnTimeout(t time.Duration) {
-	c.connTimeout = t
+	conn        net.Conn
 }
 
 // SetCmdTimeout sets the cmd timeout
 func (c *Client) SetCmdTimeout(t time.Duration) {
 	c.cmdTimeout = t
-}
-
-// SetConnRetries sets the number of times
-// connection is retried
-func (c *Client) SetConnRetries(s int) {
-	if s < 0 {
-		s = 0
-	}
-	c.connRetries = s
 }
 
 // SetConnSleep sets the connection retry sleep
@@ -70,11 +68,20 @@ func (c *Client) SetConnSleep(s time.Duration) {
 	c.connSleep = s
 }
 
-func (c *Client) dial() (conn net.Conn, err error) {
-	d := &net.Dialer{}
+// Scan a file or directory
+func (c *Client) Scan(p string) (r *Response, err error) {
+	r, err = c.fileCmd(p)
+	return
+}
 
-	if c.connTimeout > 0 {
-		d.Timeout = c.connTimeout
+// ScanReader scans an io.reader
+func (c *Client) ScanReader(i io.Reader) (r *Response, err error) {
+	return
+}
+
+func (c *Client) dial() (conn net.Conn, err error) {
+	d := &net.Dialer{
+		Timeout: c.connTimeout,
 	}
 
 	for i := 0; i <= c.connRetries; i++ {
@@ -88,49 +95,83 @@ func (c *Client) dial() (conn net.Conn, err error) {
 	return
 }
 
+func (c *Client) basicCmd() (s string, err error) {
+	return
+}
+
+func (c *Client) fileCmd(p string) (r *Response, err error) {
+	return
+}
+
+func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
+	return
+}
+
 // NewClient creates and returns a new instance of Client
-func NewClient(address string) (c *Client, err error) {
+func NewClient(network, address string, connTimeOut, ioTimeOut time.Duration, connRetries int) (c *Client, err error) {
 	var line string
-	var conn net.Conn
+
+	if network == "" && address == "" {
+		network = "unix"
+		address = defaultSock
+	}
+
+	if network != "unix" && network != "unixpacket" && network != "tcp" && network != "tcp4" && network != "tcp6" {
+		err = fmt.Errorf("Protocol: %s is not supported", network)
+		return
+	}
+
+	if network == "unix" || network == "unixpacket" {
+		if _, err = os.Stat(address); os.IsNotExist(err) {
+			err = fmt.Errorf("The unix socket: %s does not exist", address)
+			return
+		}
+	}
 
 	c = &Client{
+		network:     network,
 		address:     address,
-		connTimeout: defaultTimeout,
+		connTimeout: connTimeOut,
 		connSleep:   defaultSleep,
+		cmdTimeout:  ioTimeOut,
+		connRetries: connRetries,
 	}
 
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	if c.tc == nil {
-		if conn, err = c.dial(); err != nil {
-			return
-		}
-
-		c.tc = textproto.NewConn(conn)
+	if c.conn, err = c.dial(); err != nil {
+		return
 	}
 
+	defer c.conn.SetDeadline(ZeroTime)
+
+	c.tc = textproto.NewConn(c.conn)
+
+	c.conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	if line, err = c.tc.ReadLine(); err != nil {
 		return
 	}
 
-	if !strings.HasPrefix(line, "OK") {
+	if !strings.HasPrefix(line, okResp) {
 		err = fmt.Errorf("Greeting failed: %s", line)
 		c.tc.Close()
 		return
 	}
 
+	c.conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	if err = c.tc.PrintfLine("%s", protocolVersion); err != nil {
 		c.tc.Close()
 		return
 	}
 
+	c.conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	if line, err = c.tc.ReadLine(); err != nil {
 		c.tc.Close()
 		return
 	}
 
-	if !strings.HasPrefix(line, "ACC") {
+	if !strings.HasPrefix(line, ackResp) {
 		err = fmt.Errorf("Ack failed: %s", line)
 		c.tc.Close()
 		return
