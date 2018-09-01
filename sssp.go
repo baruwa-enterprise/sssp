@@ -34,6 +34,12 @@ const (
 	doneOk          = "DONE OK"
 	doneFail        = "DONE FAIL"
 	virusResp       = "VIRUS"
+	noSizeErr       = "The content length could not be determined"
+	dirScanErr      = "Scanning directories is not supported"
+	invalidRespErr  = "Invalid server response: %s"
+	virusMatchErr   = "Virus match failure: %s"
+	greetingErr     = "Greeting failed: %s"
+	ackErr          = "Ack failed: %s"
 )
 
 const (
@@ -145,7 +151,7 @@ func (c *Client) ScanStream(p string) (r *Response, err error) {
 	}
 
 	if stat.IsDir() {
-		err = fmt.Errorf("Scanning directories is not supported")
+		err = fmt.Errorf(dirScanErr)
 		return
 	}
 
@@ -238,7 +244,7 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 		}
 		clen = stat.Size()
 	default:
-		err = fmt.Errorf("The content length could not be determined")
+		err = fmt.Errorf(noSizeErr)
 		return
 	}
 
@@ -335,7 +341,7 @@ func (c *Client) processResponse(p string) (r *Response, err error) {
 		}
 
 		if strings.HasPrefix(line, virusResp) {
-			ierr = fmt.Errorf("Virus match failure: |%s|", line)
+			ierr = fmt.Errorf(virusMatchErr, line)
 			continue
 		}
 	}
@@ -348,11 +354,9 @@ func (c *Client) processResponse(p string) (r *Response, err error) {
 }
 
 func (c *Client) processResponses() (r []*Response, err error) {
-	var seen bool
 	var ierr error
 	var line string
 
-	r = make([]*Response, 1)
 	for {
 		c.conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 		if line, err = c.tc.ReadLine(); err != nil {
@@ -379,16 +383,12 @@ func (c *Client) processResponses() (r []*Response, err error) {
 			rs.Raw = line
 			pts := strings.Split(line, " ")
 			if len(pts) != 3 {
-				ierr = fmt.Errorf("Invalid server response: %s", line)
+				ierr = fmt.Errorf(invalidRespErr, line)
 			} else {
 				rs.Filename = pts[2]
 			}
-			if !seen {
-				r[0] = rs
-				seen = true
-			} else {
-				r = append(r, rs)
-			}
+
+			r = append(r, rs)
 			continue
 		}
 
@@ -409,7 +409,7 @@ func (c *Client) processResponses() (r []*Response, err error) {
 				if strings.HasPrefix(line, okResp) {
 					pts := strings.Split(line, " ")
 					if len(pts) != 3 {
-						ierr = fmt.Errorf("Invalid server response: %s", line)
+						ierr = fmt.Errorf(invalidRespErr, line)
 					} else {
 						rs.Filename = pts[2]
 						if rs.ArchiveItem == rs.Filename {
@@ -419,16 +419,12 @@ func (c *Client) processResponses() (r []*Response, err error) {
 					break
 				}
 			}
-			if !seen {
-				r[0] = rs
-				seen = true
-			} else {
-				r = append(r, rs)
-			}
+
+			r = append(r, rs)
 		}
 
 		if strings.HasPrefix(line, virusResp) {
-			ierr = fmt.Errorf("Virus match failure: %s", line)
+			ierr = fmt.Errorf(virusMatchErr, line)
 			continue
 		}
 
@@ -452,7 +448,7 @@ func (c *Client) greeting() (err error) {
 	}
 
 	if !strings.HasPrefix(line, okResp) {
-		err = fmt.Errorf("Greeting failed: %s", line)
+		err = fmt.Errorf(greetingErr, line)
 		return
 	}
 
@@ -475,7 +471,7 @@ func (c *Client) proto() (err error) {
 	}
 
 	if !strings.HasPrefix(line, ackResp) {
-		err = fmt.Errorf("Ack failed: %s", line)
+		err = fmt.Errorf(ackErr, line)
 		return
 	}
 
