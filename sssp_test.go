@@ -11,6 +11,7 @@ package sssp
 
 import (
 	"bytes"
+	"compress/bzip2"
 	"fmt"
 	"go/build"
 	"net"
@@ -376,6 +377,22 @@ func TestTCPScanStream(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.ScanFile(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+		fn = path.Join(gopath, "src/github.com/baruwa-enterprise/sssp/examples/data")
+		s, e = c.ScanStream(fn)
+		if e == nil {
+			t.Fatalf("An error should be returned")
+		}
+		if e.Error() != dirScanErr {
+			t.Errorf("Error returned: %s, want %s", e.Error(), dirScanErr)
+		}
+		fn = path.Join(gopath, "src/github.com/baruwa-enterprise/sssp/examples/data/xxxx.pdf")
+		s, e = c.ScanStream(fn)
+		if e == nil {
+			t.Fatalf("An error should be returned")
+		}
+		if !os.IsNotExist(e) {
+			t.Errorf("Expected a os.IsNotExist error got %v", e)
+		}
 	}
 }
 
@@ -430,6 +447,13 @@ func TestTCPScanReaderFile(t *testing.T) {
 		}
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.ScanFile(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
+		}
+		s, e = c.ScanReader(bzip2.NewReader(f))
+		if e == nil {
+			t.Fatalf("An error should be returned")
+		}
+		if e.Error() != noSizeErr {
+			t.Errorf("Error returned: %s, want %s", e.Error(), noSizeErr)
 		}
 	}
 }
