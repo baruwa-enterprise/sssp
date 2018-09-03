@@ -23,23 +23,25 @@ import (
 )
 
 const (
-	defaultTimeout  = 15 * time.Second
-	defaultSleep    = 1 * time.Second
-	defaultSock     = "/var/lib/savdid/sssp.sock"
-	protocolVersion = "SSSP/1.0"
-	okResp          = "OK"
-	ackResp         = "ACC"
-	failResp        = "FAIL"
-	doneResp        = "DONE"
-	doneOk          = "DONE OK"
-	doneFail        = "DONE FAIL"
-	virusResp       = "VIRUS"
-	noSizeErr       = "The content length could not be determined"
-	dirScanErr      = "Scanning directories is not supported"
-	invalidRespErr  = "Invalid server response: %s"
-	virusMatchErr   = "Virus match failure: %s"
-	greetingErr     = "Greeting failed: %s"
-	ackErr          = "Ack failed: %s"
+	defaultTimeout      = 15 * time.Second
+	defaultSleep        = 1 * time.Second
+	defaultSock         = "/var/lib/savdid/sssp.sock"
+	protocolVersion     = "SSSP/1.0"
+	okResp              = "OK"
+	ackResp             = "ACC"
+	failResp            = "FAIL"
+	doneResp            = "DONE"
+	doneOk              = "DONE OK"
+	doneFail            = "DONE FAIL"
+	virusResp           = "VIRUS"
+	unixSockErr         = "The unix socket: %s does not exist"
+	unsupportedProtoErr = "Protocol: %s is not supported"
+	noSizeErr           = "The content length could not be determined"
+	dirScanErr          = "Scanning directories is not supported"
+	invalidRespErr      = "Invalid server response: %s"
+	virusMatchErr       = "Virus match failure: %s"
+	greetingErr         = "Greeting failed: %s"
+	ackErr              = "Ack failed: %s"
 )
 
 const (
@@ -515,13 +517,13 @@ func NewClient(network, address string, connTimeOut, ioTimeOut time.Duration, co
 	}
 
 	if network != "unix" && network != "unixpacket" && network != "tcp" && network != "tcp4" && network != "tcp6" {
-		err = fmt.Errorf("Protocol: %s is not supported", network)
+		err = fmt.Errorf(unsupportedProtoErr, network)
 		return
 	}
 
 	if network == "unix" || network == "unixpacket" {
 		if _, err = os.Stat(address); os.IsNotExist(err) {
-			err = fmt.Errorf("The unix socket: %s does not exist", address)
+			err = fmt.Errorf(unixSockErr, address)
 			return
 		}
 	}

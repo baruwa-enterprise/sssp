@@ -50,13 +50,14 @@ func TestCommand(t *testing.T) {
 }
 
 func TestBasics(t *testing.T) {
-	var expected string
+	var expected, testSock string
 	// Test Non existent socket
+	testSock = "/tmp/.dumx.sock"
 	_, e := NewClient("unix", "/tmp/.dumx.sock", 1*time.Second, 30*time.Second, 0)
 	if e == nil {
 		t.Fatalf("An error should be returned as sock does not exist")
 	}
-	expected = "The unix socket: /tmp/.dumx.sock does not exist"
+	expected = fmt.Sprintf(unixSockErr, testSock)
 	if e.Error() != expected {
 		t.Errorf("Expected %q want %q", expected, e)
 	}
@@ -65,7 +66,7 @@ func TestBasics(t *testing.T) {
 	if e == nil {
 		t.Fatalf("An error should be returned as sock does not exist")
 	}
-	expected = fmt.Sprintf("The unix socket: %s does not exist", defaultSock)
+	expected = fmt.Sprintf(unixSockErr, defaultSock)
 	if e.Error() != expected {
 		t.Errorf("Got %q want %q", expected, e)
 	}
@@ -74,7 +75,7 @@ func TestBasics(t *testing.T) {
 	if e == nil {
 		t.Fatalf("Expected an error got nil")
 	}
-	expected = "Protocol: udp is not supported"
+	expected = fmt.Sprintf(unsupportedProtoErr, "udp")
 	if e.Error() != expected {
 		t.Errorf("Got %q want %q", expected, e)
 	}
@@ -193,6 +194,8 @@ func TestTCPScanFile(t *testing.T) {
 		if s.Signature != "" {
 			t.Errorf("c.ScanFile(%q).Signature = %s, want %s", fn, s.Signature, "")
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
 
@@ -260,6 +263,8 @@ func TestTCPScanDir(t *testing.T) {
 		if fd3 {
 			t.Errorf("fd3 = %t, want %t", fd3, false)
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
 
@@ -327,6 +332,8 @@ func TestTCPScanDirr(t *testing.T) {
 		if fd3 {
 			t.Errorf("fd3 = %t, want %t", fd3, false)
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
 
@@ -393,6 +400,8 @@ func TestTCPScanStream(t *testing.T) {
 		if !os.IsNotExist(e) {
 			t.Errorf("Expected a os.IsNotExist error got %v", e)
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
 
@@ -455,6 +464,8 @@ func TestTCPScanReaderFile(t *testing.T) {
 		if e.Error() != noSizeErr {
 			t.Errorf("Error returned: %s, want %s", e.Error(), noSizeErr)
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
 
@@ -498,6 +509,8 @@ func TestTCPScanReaderBytes(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.ScanFile(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
 
@@ -540,6 +553,8 @@ func TestTCPScanReaderBuffer(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.ScanFile(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
 
@@ -582,5 +597,7 @@ func TestTCPScanReaderString(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.ScanFile(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+	} else {
+		t.Skip("skipping test; $SSSP_TCP_ADDRESS not set")
 	}
 }
