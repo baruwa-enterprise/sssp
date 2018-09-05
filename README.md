@@ -38,7 +38,7 @@ $ ./bin/ssspscan
 To install the library
 
 ```console
-go get get github.com/baruwa-enterprise/sssp
+go get github.com/baruwa-enterprise/sssp
 ```
 
 You can then import it in your code
