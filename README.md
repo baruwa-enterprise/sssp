@@ -2,7 +2,6 @@
 
 Golang SSSP Client
 
-[![Build Status](https://travis-ci.org/baruwa-enterprise/sssp.svg?branch=master)](https://travis-ci.org/baruwa-enterprise/sssp)
 [![Ci](https://github.com/baruwa-enterprise/sssp/workflows/Ci/badge.svg)](https://github.com/baruwa-enterprise/sssp/actions?query=workflow%3ACi)
 [![codecov](https://codecov.io/gh/baruwa-enterprise/sssp/branch/master/graph/badge.svg)](https://codecov.io/gh/baruwa-enterprise/sssp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/baruwa-enterprise/sssp)](https://goreportcard.com/report/github.com/baruwa-enterprise/sssp)
