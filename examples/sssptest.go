@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andrew Colin Kissa <andrew@datopdog.io>
+// Copyright (C) 2018-2021 Andrew Colin Kissa <andrew@datopdog.io>
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -74,7 +75,8 @@ func main() {
 	flag.CommandLine.SortFlags = false
 	flag.Parse()
 	address := fmt.Sprintf("%s:%d", cfg.Address, cfg.Port)
-	c, e := sssp.NewClient("tcp", address, 2*time.Second, 30*time.Second, 0)
+	ctx := context.Background()
+	c, e := sssp.NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 0)
 	if e != nil {
 		log.Println(e)
 		return

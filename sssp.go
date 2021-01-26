@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andrew Colin Kissa <andrew@datopdog.io>
+// Copyright (C) 2018-2021 Andrew Colin Kissa <andrew@datopdog.io>
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -11,6 +11,7 @@ package sssp
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -174,13 +175,13 @@ func (c *Client) ScanReader(i io.Reader) (r *Response, err error) {
 	return
 }
 
-func (c *Client) dial() (conn net.Conn, err error) {
+func (c *Client) dial(ctx context.Context) (conn net.Conn, err error) {
 	d := &net.Dialer{
 		Timeout: c.connTimeout,
 	}
 
 	for i := 0; i <= c.connRetries; i++ {
-		conn, err = d.Dial(c.network, c.address)
+		conn, err = d.DialContext(ctx, c.network, c.address)
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			time.Sleep(c.connSleep)
 			continue
@@ -484,11 +485,11 @@ func (c *Client) proto() (err error) {
 // This is called automatically when you call NewClient
 // It is provided to allow for reconnection if the underlying
 // connection is dropped due to inactivity.
-func (c *Client) Dial() (err error) {
+func (c *Client) Dial(ctx context.Context) (err error) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	if c.conn, err = c.dial(); err != nil {
+	if c.conn, err = c.dial(ctx); err != nil {
 		return
 	}
 
@@ -510,7 +511,7 @@ func (c *Client) Dial() (err error) {
 }
 
 // NewClient creates and returns a new instance of Client
-func NewClient(network, address string, connTimeOut, ioTimeOut time.Duration, connRetries int) (c *Client, err error) {
+func NewClient(ctx context.Context, network, address string, connTimeOut, ioTimeOut time.Duration, connRetries int) (c *Client, err error) {
 	if network == "" && address == "" {
 		network = "unix"
 		address = defaultSock
@@ -537,7 +538,7 @@ func NewClient(network, address string, connTimeOut, ioTimeOut time.Duration, co
 		connRetries: connRetries,
 	}
 
-	err = c.Dial()
+	err = c.Dial(ctx)
 
 	return
 }

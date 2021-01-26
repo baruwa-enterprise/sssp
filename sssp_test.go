@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andrew Colin Kissa <andrew@datopdog.io>
+// Copyright (C) 2018-2021 Andrew Colin Kissa <andrew@datopdog.io>
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -12,6 +12,7 @@ package sssp
 import (
 	"bytes"
 	"compress/bzip2"
+	"context"
 	"fmt"
 	"go/build"
 	"net"
@@ -53,7 +54,8 @@ func TestBasics(t *testing.T) {
 	var expected, testSock string
 	// Test Non existent socket
 	testSock = "/tmp/.dumx.sock"
-	_, e := NewClient("unix", "/tmp/.dumx.sock", 1*time.Second, 30*time.Second, 0)
+	ctx := context.Background()
+	_, e := NewClient(ctx, "unix", "/tmp/.dumx.sock", 1*time.Second, 30*time.Second, 0)
 	if e == nil {
 		t.Fatalf("An error should be returned as sock does not exist")
 	}
@@ -62,7 +64,7 @@ func TestBasics(t *testing.T) {
 		t.Errorf("Expected %q want %q", expected, e)
 	}
 	// Test defaults
-	_, e = NewClient("", "", 1*time.Second, 30*time.Second, 0)
+	_, e = NewClient(ctx, "", "", 1*time.Second, 30*time.Second, 0)
 	if e == nil {
 		t.Fatalf("An error should be returned as sock does not exist")
 	}
@@ -71,7 +73,7 @@ func TestBasics(t *testing.T) {
 		t.Errorf("Got %q want %q", expected, e)
 	}
 	// Test udp
-	_, e = NewClient("udp", "127.1.1.1:4020", 1*time.Second, 30*time.Second, 0)
+	_, e = NewClient(ctx, "udp", "127.1.1.1:4020", 1*time.Second, 30*time.Second, 0)
 	if e == nil {
 		t.Fatalf("Expected an error got nil")
 	}
@@ -82,7 +84,7 @@ func TestBasics(t *testing.T) {
 	// Test tcp
 	network := "tcp"
 	address := "127.1.1.1:4020"
-	c, e := NewClient(network, address, 1*time.Second, 30*time.Second, 0)
+	c, e := NewClient(ctx, network, address, 1*time.Second, 30*time.Second, 0)
 	if e == nil {
 		t.Fatalf("An error should be returned")
 	}
@@ -99,7 +101,8 @@ func TestSettings(t *testing.T) {
 	var c *Client
 	network := "tcp"
 	address := "127.1.1.1:4020"
-	if c, e = NewClient(network, address, 1*time.Second, 30*time.Second, 0); e == nil {
+	ctx := context.Background()
+	if c, e = NewClient(ctx, network, address, 1*time.Second, 30*time.Second, 0); e == nil {
 		t.Fatalf("An error should be returned")
 	}
 	if _, ok := e.(*net.OpError); !ok {
@@ -141,10 +144,11 @@ func TestTCPScanFile(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
@@ -216,10 +220,11 @@ func TestTCPScanDir(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
@@ -285,10 +290,11 @@ func TestTCPScanDirr(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
@@ -353,10 +359,11 @@ func TestTCPScanStream(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
@@ -422,10 +429,11 @@ func TestTCPScanReaderFile(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
@@ -484,10 +492,11 @@ func TestTCPScanReaderBytes(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
@@ -529,10 +538,11 @@ func TestTCPScanReaderBuffer(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
@@ -573,10 +583,11 @@ func TestTCPScanReaderString(t *testing.T) {
 	}
 
 	if !skip {
+		ctx := context.Background()
 		if address == localSock {
-			c, e = NewClient("tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp4", "192.168.1.126:4020", 2*time.Second, 30*time.Second, 1)
 		} else {
-			c, e = NewClient("tcp", address, 2*time.Second, 30*time.Second, 1)
+			c, e = NewClient(ctx, "tcp", address, 2*time.Second, 30*time.Second, 1)
 		}
 		if e != nil {
 			t.Fatalf("An error should not be returned:%s", e)
