@@ -26,6 +26,7 @@ import (
 const (
 	defaultTimeout      = 15 * time.Second
 	defaultSleep        = 1 * time.Second
+	defaultCmdTimeout   = 1 * time.Minute
 	defaultSock         = "/var/lib/savdid/sssp.sock"
 	protocolVersion     = "SSSP/1.0"
 	okResp              = "OK"
@@ -110,13 +111,17 @@ type Client struct {
 
 // SetCmdTimeout sets the cmd timeout
 func (c *Client) SetCmdTimeout(t time.Duration) {
-	c.cmdTimeout = t
+	if t > 0 {
+		c.cmdTimeout = t
+	}
 }
 
 // SetConnSleep sets the connection retry sleep
 // duration in seconds
 func (c *Client) SetConnSleep(s time.Duration) {
-	c.connSleep = s
+	if s > 0 {
+		c.connSleep = s
+	}
 }
 
 // Close closes the connection to the server gracefully
@@ -527,6 +532,14 @@ func NewClient(ctx context.Context, network, address string, connTimeOut, ioTime
 			err = fmt.Errorf(unixSockErr, address)
 			return
 		}
+	}
+
+	if connTimeOut == 0 {
+		connTimeOut = defaultTimeout
+	}
+
+	if ioTimeOut == 0 {
+		ioTimeOut = defaultCmdTimeout
 	}
 
 	c = &Client{
