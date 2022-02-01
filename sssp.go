@@ -10,7 +10,6 @@ SSSP - Golang SSSP protocol implementation
 package sssp
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -64,6 +63,10 @@ var (
 	ZeroTime   time.Time
 	responseRe = regexp.MustCompile(`^VIRUS\s(?P<signature>\S+)\s(?P<filename>\S+)?$`)
 )
+
+type readerWithLen interface {
+	Len() int
+}
 
 // A Command represents a SSSP Command
 type Command int
@@ -239,11 +242,7 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 	defer c.conn.SetDeadline(ZeroTime)
 
 	switch v := i.(type) {
-	case *bytes.Buffer:
-		clen = int64(v.Len())
-	case *bytes.Reader:
-		clen = int64(v.Len())
-	case *strings.Reader:
+	case readerWithLen:
 		clen = int64(v.Len())
 	case *os.File:
 		stat, err = v.Stat()
